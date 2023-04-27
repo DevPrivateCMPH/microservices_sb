@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: eureka-service
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8081
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        globally_quoted_identifiers: true
+        globally_quoted_identifiers_skip_column_definitions: true
