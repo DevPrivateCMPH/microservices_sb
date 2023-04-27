@@ -14,7 +14,7 @@ spring:
         gateway:
             discovery: 
                 locator:
-                    enable: true
+                    enabled: true
             router:
               - id: user-service
                 uri: lb://user-service
