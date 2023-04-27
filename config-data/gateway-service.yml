@@ -15,7 +15,7 @@ spring:
             discovery: 
                 locator:
                     enabled: true
-            router:
+            routes:
               - id: user-service
                 uri: lb://user-service
                 predicates:
