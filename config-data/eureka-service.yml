@@ -4,5 +4,5 @@ eureka:
     client:
         fetch-registry: false
         register-with-eureka: false
-    server:
-        wait-time-in-ms-when-sync-empty: 0
+    instance:
+        lease-renewal-interval-in-seconds: 0
