@@ -4,6 +4,7 @@ import com.cmph.userservice.entity.User;
 import com.cmph.userservice.model.Bike;
 import com.cmph.userservice.model.Car;
 import com.cmph.userservice.service.UserService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,8 +47,9 @@ public class UserController {
         return ResponseEntity.badRequest().build();
     }
 
+    @CircuitBreaker(name = "carsCB", fallbackMethod = "fallBackGetCars")
     @GetMapping("/cars/{userId}")
-    public ResponseEntity<?> getCars(@PathVariable("userId") int userId){
+    public ResponseEntity<?> getCars(@PathVariable("userId") int userId) {
         User user = userService.getUserById(userId);
         if(user != null){
             List<Car> cars = userService.getCars(userId);
@@ -56,18 +58,9 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/bikes/{userId}")
-    public ResponseEntity<?> getBikes(@PathVariable("userId") int userId){
-        User user = userService.getUserById(userId);
-        if(user != null){
-            List<Bike> bikes = userService.getBikes(userId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(bikes);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
+    @CircuitBreaker(name = "carsCB", fallbackMethod = "fallBackSaveCar")
     @PostMapping("/savecar/{userId}")
-    public ResponseEntity<?> saveCar(@PathVariable("userId") int userId, @RequestBody Car car){
+    public ResponseEntity<?> saveCar(@PathVariable("userId") int userId, @RequestBody Car car) {
         if(userService.getUserById(userId) != null) {
             Car carNew = userService.saveCar(userId, car);
             if (carNew != null) {
@@ -77,8 +70,20 @@ public class UserController {
         return ResponseEntity.badRequest().build();
     }
 
+    @CircuitBreaker(name = "bikesCB", fallbackMethod = "fallBackGetBikes")
+    @GetMapping("/bikes/{userId}")
+    public ResponseEntity<?> getBikes(@PathVariable("userId") int userId) {
+        User user = userService.getUserById(userId);
+        if(user != null){
+            List<Bike> bikes = userService.getBikes(userId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(bikes);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @CircuitBreaker(name = "bikesCB", fallbackMethod = "fallBackSaveBike")
     @PostMapping("/savebike/{userId}")
-    public ResponseEntity<?> saveBike(@PathVariable("userId") int userId, @RequestBody Bike bike){
+    public ResponseEntity<?> saveBike(@PathVariable("userId") int userId, @RequestBody Bike bike) {
         if(userService.getUserById(userId) != null) {
             Bike bikeNew = userService.saveBike(userId, bike);
             if (bikeNew != null) {
@@ -88,8 +93,29 @@ public class UserController {
         return ResponseEntity.badRequest().build();
     }
 
+    @CircuitBreaker(name = "allCB", fallbackMethod = "fallBackGetAllVehicles")
     @GetMapping("/getAll/{userId}")
-    public ResponseEntity<?> getAllVehicles(@PathVariable("userId") int userId){
+    public ResponseEntity<?> getAllVehicles(@PathVariable("userId") int userId) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getUserAndVehicles(userId));
+    }
+
+    private ResponseEntity<?> fallBackGetCars(@PathVariable("userId") int userId, RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.OK).body("El usuario [" + userId + "]" + " tiene los coches en el taller");
+    }
+
+    private ResponseEntity<?> fallBackSaveCar(@PathVariable("userId") int userId, @RequestBody Car car, RuntimeException e){
+        return ResponseEntity.status(HttpStatus.OK).body("El usuario [" + userId + "]" + " no tiene dinero para coches");
+    }
+
+    private ResponseEntity<?> fallBackGetBikes(@PathVariable("userId") int userId, RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.OK).body("El usuario [" + userId + "]" + " tiene las motos en el taller");
+    }
+
+    private ResponseEntity<?> fallBackSaveBike(@PathVariable("userId") int userId, @RequestBody Bike bike, RuntimeException e){
+        return ResponseEntity.status(HttpStatus.OK).body("El usuario [" + userId + "]" + " no tiene dinero para motos");
+    }
+
+    private ResponseEntity<?> fallBackGetAllVehicles(@PathVariable("userId") int userId, RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.OK).body("El usuario [" + userId + "]" + " tiene los vehiculos en el taller");
     }
 }
